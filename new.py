@@ -13,19 +13,23 @@ st.title("Video Zone Dashboard")
 # video_source = "sample2.mp4"  # change to 0 for webcam
 # cap = cv2.VideoCapture(video_source)
 
+import tempfile
+
 uploaded_file = st.file_uploader("Upload a video", type=["mp4", "avi", "mov"])
 if uploaded_file is not None:
-    with open(rf'uploaded_file', "wb") as f:
-        f.write(uploaded_file.read())
-    cap = cv2.VideoCapture(uploaded_file.name)
+    # Save to a temporary file
+    tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+    tfile.write(uploaded_file.read())
+    video_path = tfile.name
+
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        st.error("Could not load video")
+        st.stop()
 else:
     st.warning("Please upload a video file.")
     st.stop()
 
-ret, frame = cap.read()
-if not ret:
-    st.error("Could not load video")
-    st.stop()
 
 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
@@ -113,3 +117,4 @@ elif mode == "Delete Zones":
                 json.dump(zones, f)
             st.success(f"Zone '{deleted_label}' deleted!")
             st.experimental_rerun()
+
