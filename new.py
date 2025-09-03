@@ -15,20 +15,27 @@ st.title("Video Zone Dashboard")
 
 import tempfile
 
+import tempfile
+
 uploaded_file = st.file_uploader("Upload a video", type=["mp4", "avi", "mov"])
 if uploaded_file is not None:
     # Save to a temporary file
     tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
     tfile.write(uploaded_file.read())
+    tfile.flush()  # Ensure all data is written
+    tfile.close()
+    
     video_path = tfile.name
-
     cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        st.error("Could not load video")
+    
+    ret, frame = cap.read()
+    if not ret:
+        st.error("Could not load the first frame of the video. Maybe codec is unsupported.")
         st.stop()
 else:
     st.warning("Please upload a video file.")
     st.stop()
+
 
 
 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -117,4 +124,5 @@ elif mode == "Delete Zones":
                 json.dump(zones, f)
             st.success(f"Zone '{deleted_label}' deleted!")
             st.experimental_rerun()
+
 
