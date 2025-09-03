@@ -15,10 +15,9 @@ st.title("Video Zone Dashboard")
 
 uploaded_file = st.file_uploader("Upload a video", type=["mp4", "avi", "mov"])
 if uploaded_file is not None:
-    video_path = "uploaded.mp4"
-    with open(video_path, "wb") as f:
+    with open(rf'uploaded_file', "wb") as f:
         f.write(uploaded_file.read())
-    cap = cv2.VideoCapture(video_path)
+    cap = cv2.VideoCapture(uploaded_file.name)
 else:
     st.warning("Please upload a video file.")
     st.stop()
