@@ -4,35 +4,30 @@ from streamlit_drawable_canvas import st_canvas
 from PIL import Image
 import json
 from pathlib import Path
-import tempfile
 
 ZONE_FILE = "zones.json"
 
 st.set_page_config(layout="wide")
 st.title("Video Zone Dashboard")
 
-# Upload video
+# video_source = "sample2.mp4"  # change to 0 for webcam
+# cap = cv2.VideoCapture(video_source)
+
 uploaded_file = st.file_uploader("Upload a video", type=["mp4", "avi", "mov"])
 if uploaded_file is not None:
-    # Save to a temporary file
-    tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-    tfile.write(uploaded_file.read())
-    tfile.flush()
-    tfile.close()
-
-    video_path = tfile.name
-    cap = cv2.VideoCapture(video_path)
-
-    ret, frame = cap.read()
-    if not ret or frame is None:
-        st.error("Could not load the first frame of the video. Maybe codec is unsupported.")
-        st.stop()
+    with open(rf'uploaded_file', "wb") as f:
+        f.write(uploaded_file.read())
+    cap = cv2.VideoCapture(uploaded_file.name)
 else:
     st.warning("Please upload a video file.")
     st.stop()
 
-# --- Convert to RGB safely ---
-frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+ret, frame = cap.read()
+if not ret:
+    st.error("Could not load video")
+    st.stop()
+
+frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 # --- resize frame ---
 def resize_frame(frame, max_width=640):
@@ -40,9 +35,10 @@ def resize_frame(frame, max_width=640):
     scale = max_width / w
     new_w = int(w * scale)
     new_h = int(h * scale)
-    return cv2.resize(frame, (new_w, new_h))
+    resized = cv2.resize(frame, (new_w, new_h))
+    return resized
 
-frame_rgb = resize_frame(frame_rgb, max_width=640)
+frame = resize_frame(frame, max_width=640)
 
 # Sidebar
 mode = st.sidebar.radio("Mode", ["Draw Zones", "Preview Zones", "Delete Zones"])
@@ -61,10 +57,10 @@ if mode == "Draw Zones":
         fill_color="rgba(0, 255, 0, 0.3)",
         stroke_width=2,
         stroke_color="red",
-        background_image=Image.fromarray(frame_rgb),
+        background_image=Image.fromarray(frame),
         update_streamlit=True,
-        height=frame_rgb.shape[0],
-        width=frame_rgb.shape[1],
+        height=frame.shape[0],
+        width=frame.shape[1],
         drawing_mode="rect",  # "polygon" also works
         key="canvas",
     )
@@ -76,16 +72,16 @@ if mode == "Draw Zones":
 
         if st.button("Save Zone"):
             if zone_label and drawn_objects:
-                obj = drawn_objects[-1]  # save only latest
+                obj = drawn_objects[-1]   # ✅ save only latest
                 zones.append({"label": zone_label, "shape": obj})
                 with open(ZONE_FILE, "w") as f:
                     json.dump(zones, f)
                 st.success(f"Zone '{zone_label}' saved!")
-                st.experimental_rerun()
+                st.experimental_rerun()   # ✅ refresh UI
 
 # Preview Zones
 elif mode == "Preview Zones":
-    preview_frame = frame_rgb.copy()
+    preview_frame = frame.copy()
     for zone in zones:
         obj = zone["shape"]
         label = zone["label"]
