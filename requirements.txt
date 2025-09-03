@@ -35,8 +35,8 @@ rich==13.9.4
 rpds-py==0.27.1
 six==1.17.0
 smmap==5.0.2
-streamlit==1.23.1
-streamlit-drawable-canvas==0.9.3
+streamlit
+streamlit-drawable-canvas
 tenacity==8.5.0
 toml==0.10.2
 tornado==6.5.2
